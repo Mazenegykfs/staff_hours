@@ -159,13 +159,19 @@
 
     <div class="section-card upload-section">
         <h3 class="text-xl font-bold mb-4">تحميل ملف ساعات التدريس (XLSX)</h3>
+        <!-- File input, now triggers processing directly on change -->
         <input type="file" id="xlsxFileInput" accept=".xlsx" class="mb-4 p-2 border rounded-md">
-        <button id="processXlsxButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
-            معالجة الملف
-        </button>
-        <button id="printAllReportsButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out ml-4">
-            طباعة جميع التقارير PDF
-        </button>
+        
+        <!-- Buttons for printing -->
+        <div class="flex justify-center mt-4 space-x-4">
+            <button id="printAllReportsButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+                طباعة جميع التقارير PDF
+            </button>
+            <button id="printCurrentReportButton" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+                طباعة التقرير الحالي PDF
+            </button>
+        </div>
+        
         <p id="messageBox" class="text-red-500 mt-2"></p>
     </div>
 
@@ -187,17 +193,19 @@
             let headers = [];     // Stores XLSX headers (from Excel row 2)
 
             const xlsxFileInput = document.getElementById('xlsxFileInput');
-            const processXlsxButton = document.getElementById('processXlsxButton');
             const staffSelect = document.getElementById('staffSelect');
             const reportDisplayArea = document.getElementById('reportDisplayArea');
             const messageBox = document.getElementById('messageBox');
             const loadingOverlay = document.getElementById('loadingOverlay');
             const staffSelectionSection = document.querySelector('.staff-selection-section');
             const printAllReportsButton = document.getElementById('printAllReportsButton');
+            const printCurrentReportButton = document.getElementById('printCurrentReportButton'); // New button
 
-            processXlsxButton.addEventListener('click', processFile);
+            // Event listeners
+            xlsxFileInput.addEventListener('change', processFile); // Auto-process on file selection
             staffSelect.addEventListener('change', displaySelectedStaffReport);
-            printAllReportsButton.addEventListener('click', generateAllReportsAndPrint); // Event listener for new print button
+            printAllReportsButton.addEventListener('click', generateAllReportsAndPrint);
+            printCurrentReportButton.addEventListener('click', printCurrentReport); // New event listener
 
             // Define orderedArabicDays and dayMap here so they are accessible to all functions
             const orderedArabicDays = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"]; 
@@ -580,10 +588,10 @@
                 return `
                     <div class="report-content-to-print"> <!-- This div helps html2pdf target the specific content -->
                         <!-- Header Section -->
-                        <div class="text-center-aligned mb-4 flex justify-center items-center relative">
-                            <img src="01.png" alt="Logo 01" class="absolute left-0" style="left:0; top: 50%; transform: translateY(-50%); width: 160px; height: 160px;">
+                        <div class="text-center-aligned mb-4 flex justify-center items-center relative print-header-with-logos">
+                            <img src="https://placehold.co/160x160/f2f2f2/000000?text=Logo+01" alt="Logo 01" class="logo-left">
                             <h1 class="text-2xl font-bold text-gray-800 mb-2 mx-4">وزارة التعليم العالي</h1>
-                            <img src="02.png" alt="Logo 02" class="absolute right-0" style="right:0; top: 50%; transform: translateY(-50%); width: 160px; height: 160px;">
+                            <img src="https://placehold.co/160x160/f2f2f2/000000?text=Logo+02" alt="Logo 02" class="logo-right">
                         </div>
                         <div class="text-center-aligned mb-4">
                             <h2 class="text-xl font-semibold text-gray-700 mb-1">المعهد العالي للهندسة والتكنولوجيا</h2>
@@ -625,7 +633,7 @@
                                 <thead>
                                     <tr>
                                         <th rowspan="2" class="w-1/3">ايام الحضور</th>
-                                        <th colspan="2" class="w-2/3">ساعات التدريس</th>
+                                        <th colspan="2" class="w-2/3">ساعات الدرس</th>
                                     </tr>
                                     <tr>
                                         <th>نظري</th>
@@ -692,7 +700,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="3" class="font-bold text-right-aligned">الإجمالي </td>
+                                        <td colspan="3" class="font-bold text-right-aligned">الإجمالي (داخل الجدول)</td>
                                         <td class="font-bold">${displayValueOrDash(totalTheoreticalHoursAttendance)}</td>
                                         <td class="font-bold">${displayValueOrDash(totalPracticalHoursAttendance)}</td>
                                     </tr>
@@ -733,7 +741,192 @@
                 `;
             }
 
-            // New function to generate all reports and initiate PDF print
+            // Function to print only the currently displayed report
+            async function printCurrentReport() {
+                const reportContent = reportDisplayArea.querySelector('.report-content-to-print');
+                if (!reportContent) {
+                    messageBox.textContent = 'لا يوجد تقرير لعرضه. الرجاء اختيار عضو هيئة التدريس أولاً.';
+                    return;
+                }
+
+                loadingOverlay.style.display = 'flex';
+                messageBox.textContent = 'جارٍ إعداد التقرير الحالي للطباعة... يرجى الانتظار.';
+
+                const printIframe = document.createElement('iframe');
+                printIframe.style.position = 'absolute';
+                printIframe.style.left = '-9999px';
+                printIframe.style.width = '210mm'; // A4 width
+                printIframe.style.height = '297mm'; // A4 height
+                document.body.appendChild(printIframe);
+
+                await new Promise(resolve => {
+                    printIframe.onload = resolve;
+                    printIframe.contentDocument.open();
+                    printIframe.contentDocument.write(`
+                        <!DOCTYPE html>
+                        <html lang="ar" dir="rtl">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>تقرير ساعات التدريس الفردي</title>
+                            <style>
+                                body {
+                                    font-family: 'Inter', sans-serif;
+                                    background-color: #ffffff;
+                                    margin: 0;
+                                    padding: 5mm; /* Reduced overall page padding */
+                                    font-size: 0.8em; /* Slightly smaller base font for more content */
+                                }
+                                .report-content-to-print {
+                                    background-color: #ffffff;
+                                    padding: 0;
+                                    border-radius: 0;
+                                    box-shadow: none;
+                                    max-width: 200mm; /* Adjusted max-width for smaller margins */
+                                    width: 100%;
+                                    margin: 0 auto;
+                                }
+                                /* Optimized styles for print version - even more aggressive */
+                                .report-content-to-print h1, .report-content-to-print h2, .report-content-to-print h3, .report-content-to-print h4 {
+                                    margin-bottom: 0.3rem; /* Very little margin */
+                                    line-height: 1.2;
+                                }
+                                .report-content-to-print .mb-4 { margin-bottom: 0.3rem; }
+                                .report-content-to-print .mb-2 { margin-bottom: 0.2rem; }
+                                .report-content-to-print .mb-1 { margin-bottom: 0.1rem; }
+                                .report-content-to-print table { margin-top: 0.3rem; } /* Very little margin above tables */
+                                .report-content-to-print th, .report-content-to-print td { padding: 0.2rem 0.3rem; font-size: 0.9em; } /* Even less padding, slightly smaller font */
+                                .report-content-to-print .mt-6 { margin-top: 0.5rem; }
+                                .report-content-to-print .signature-section { margin-top: 0.8rem; padding-top: 0.3rem; } /* Reduced space for signatures */
+                                .report-content-to-print .signature-box { padding-top: 0.8rem; font-size: 0.9em; } /* Reduced padding for signature line, smaller font */
+
+                                table {
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                }
+                                th, td {
+                                    border: 1px solid #e5e7eb;
+                                    text-align: center;
+                                }
+                                th {
+                                    background-color: #f2f2f2;
+                                    font-weight: 600;
+                                    color: #374151;
+                                }
+                                .text-center-aligned { text-align: center; }
+                                .text-right-aligned { text-align: right; }
+                                .signature-section {
+                                    display: flex;
+                                    justify-content: space-around;
+                                    text-align: center;
+                                    flex-wrap: wrap;
+                                }
+                                .signature-box {
+                                    flex: 1;
+                                    min-width: 200px;
+                                    margin: 0.2rem; /* Reduced margin between boxes */
+                                    border-top: 1px solid #d1d5db;
+                                    text-align: center;
+                                }
+                                .grid { display: grid; }
+                                .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+                                .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                                .gap-4 { gap: 0.5rem; } /* Reduced gap for data section */
+                                .flex { display: flex; }
+                                .justify-between { justify-content: space-between; }
+                                .border-b { border-bottom-width: 1px; }
+                                .pb-2 { padding-bottom: 0.2rem; } /* Reduced padding */
+                                .font-medium { font-weight: 500; }
+                                .flex-grow { flex-grow: 1; }
+                                .text-left { text-align: left; }
+                                .text-right { text-align: right; }
+                                .text-xl { font-size: 1.25rem; }
+                                .font-bold { font-weight: 700; }
+                                .text-gray-800 { color: #1f2937; }
+                                .text-gray-700 { color: #374151; }
+                                .text-gray-600 { color: #4b5563; }
+                                .text-gray-500 { color: #6b7280; }
+
+                                .dean-title-text {
+                                    font-weight: bold;
+                                    font-size: 1.2em; /* Adjusted for smaller base font */
+                                    font-family: 'Arial Black', Gadget, sans-serif;
+                                    text-align: center;
+                                    margin-bottom: 0;
+                                    line-height: 1.1;
+                                }
+                                .dean-name {
+                                    font-weight: bold;
+                                    font-size: 1.3rem; /* Adjusted for smaller base font */
+                                    font-family: 'Arial Black', Gadget, sans-serif;
+                                    text-align: center;
+                                    margin-top: -0.3em;
+                                    line-height: 1.1;
+                                }
+                                .print-header-with-logos {
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    text-align: center;
+                                    position: relative;
+                                    padding: 0 170px;
+                                }
+                                .print-header-with-logos img {
+                                    position: absolute;
+                                    width: 160px;
+                                    height: 160px;
+                                    object-fit: contain;
+                                    top: 50%;
+                                    transform: translateY(-50%);
+                                }
+                                .print-header-with-logos .logo-left { left: 0; }
+                                .print-header-with-logos .logo-right { right: 0; }
+                            </style>
+                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+                            <link href="https://fonts.googleapis.com/css2?family=Arial+Black&display=swap" rel="stylesheet">
+                        </head>
+                        <body></body>
+                        </html>
+                    `);
+                    printIframe.contentDocument.close();
+                });
+                
+                // Clone the report content to ensure all styling is carried over
+                const clonedContent = reportContent.cloneNode(true);
+                printIframe.contentDocument.body.appendChild(clonedContent);
+
+                const options = {
+                    margin: [5, 5, 5, 5], /* Reduced page margins */
+                    filename: 'تقرير_ساعات_التدريس_الحالي.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { 
+                        scale: 2.5, /* Increased scale for more aggressive shrinking */
+                        logging: false,
+                        dpi: 192, 
+                        letterRendering: true,
+                        useCORS: true,
+                        windowWidth: printIframe.offsetWidth,
+                        windowHeight: printIframe.offsetHeight
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                try {
+                    await html2pdf().from(printIframe.contentWindow.document.body).set(options).save();
+                    messageBox.textContent = 'تم إنشاء ملف PDF للتقرير الحالي بنجاح.';
+                } catch (error) {
+                    console.error('Error generating PDF for current report:', error);
+                    messageBox.textContent = `حدث خطأ أثناء إنشاء ملف PDF للتقرير الحالي: ${error.message}`;
+                } finally {
+                    loadingOverlay.style.display = 'none';
+                    if (printIframe.parentNode) {
+                        printIframe.parentNode.removeChild(printIframe);
+                    }
+                }
+            }
+
+
+            // Function to generate all reports and initiate PDF print
             async function generateAllReportsAndPrint() {
                 if (allRecords.length === 0) {
                     messageBox.textContent = 'لا توجد بيانات لإنشاء التقارير. الرجاء معالجة ملف XLSX أولاً.';
@@ -775,25 +968,33 @@
                                 }
                                 .report-container {
                                     background-color: #ffffff;
-                                    padding: 2.5rem;
+                                    padding: 1.5rem; /* Reduced padding */
                                     border-radius: 0.75rem;
                                     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
                                     max-width: 190mm; /* Adjusted for A4 width with margins */
                                     width: 100%;
-                                    margin-bottom: 1rem; /* Reduced space for print */
+                                    margin-bottom: 0.5rem; /* Reduced space for print */
                                     page-break-after: always; /* Ensure each report starts on a new page */
                                 }
                                 .report-container:last-child {
                                     page-break-after: avoid; /* No page break after the last report */
                                 }
+                                /* Optimized styles for print version for all reports */
+                                .report-content-to-print .mb-4 { margin-bottom: 0.5rem; } /* Less space */
+                                .report-content-to-print .mb-2 { margin-bottom: 0.25rem; }
+                                .report-content-to-print .mb-1 { margin-bottom: 0.1rem; }
+                                .report-content-to-print table { margin-top: 0; } /* No margin above tables */
+                                .report-content-to-print th, .report-content-to-print td { padding: 0.3rem 0.5rem; } /* Even less padding */
+                                .report-content-to-print .mt-6 { margin-top: 0.5rem; } /* Less space above totals */
+                                .report-content-to-print .signature-section { margin-top: 1rem; padding-top: 0.5rem; } /* Reduced space for signatures */
+                                .report-content-to-print .signature-box { padding-top: 1rem; } /* Reduced padding for signature line */
+
                                 table {
                                     width: 100%;
                                     border-collapse: collapse;
-                                    margin-top: 0.5rem; /* Reduced space for print */
                                 }
                                 th, td {
                                     border: 1px solid #e5e7eb;
-                                    padding: 0.5rem; /* Reduced padding for print */
                                     text-align: center;
                                 }
                                 th {
@@ -810,7 +1011,6 @@
                                 .signature-section {
                                     display: flex;
                                     justify-content: space-around;
-                                    margin-top: 3rem;
                                     text-align: center;
                                     flex-wrap: wrap;
                                 }
@@ -818,7 +1018,6 @@
                                     flex: 1;
                                     min-width: 200px;
                                     margin: 0.5rem;
-                                    padding-top: 2rem;
                                     border-top: 1px solid #d1d5db;
                                     text-align: center; /* Centered for print iframe */
                                 }
@@ -837,11 +1036,6 @@
                                 .text-right { text-align: right; }
                                 .text-xl { font-size: 1.25rem; }
                                 .font-bold { font-weight: 700; }
-                                .mb-4 { margin-bottom: 1rem; } /* Adjusted for print iframe */
-                                .mb-2 { margin-bottom: 0.5rem; }
-                                .mb-8 { margin-bottom: 2rem; }
-                                .mt-6 { margin-top: 1.5rem; }
-                                .mt-12 { margin-top: 3rem; }
                                 .text-gray-800 { color: #1f2937; }
                                 .text-gray-700 { color: #374151; }
                                 .text-gray-600 { color: #4b5563; }
@@ -852,38 +1046,34 @@
                                     justify-content: space-between;
                                     align-items: center;
                                     text-align: center;
-                                    position: relative; /* Needed for absolute positioning of images */
-                                    padding: 0 170px; /* Adjusted padding to accommodate larger logos */
+                                    position: relative;
+                                    padding: 0 170px;
                                 }
                                 .print-header-with-logos img {
                                     position: absolute;
-                                    width: 160px; /* Enlarged size */
-                                    height: 160px; /* Enlarged size */
+                                    width: 160px;
+                                    height: 160px;
                                     object-fit: contain;
                                     top: 50%;
                                     transform: translateY(-50%);
                                 }
-                                .print-header-with-logos .logo-left {
-                                    left: 0;
-                                }
-                                .print-header-with-logos .logo-right {
-                                    right: 0;
-                                }
-                                /* Custom styles for "عميد المعهد" text in print iframe */
+                                .print-header-with-logos .logo-left { left: 0; }
+                                .print-header-with-logos .logo-right { right: 0; }
+
                                 .dean-title-text {
                                     font-weight: bold;
-                                    font-size: 1.3em; /* Larger font size */
-                                    font-family: 'Arial Black', Gadget, sans-serif; /* Arial Black or fallback */
-                                    text-align: center; /* Centered */
+                                    font-size: 1.3em;
+                                    font-family: 'Arial Black', Gadget, sans-serif;
+                                    text-align: center;
                                     margin-bottom: 0;
                                     line-height: 1.1;
                                 }
                                 .dean-name {
                                     font-weight: bold;
-                                    font-size: 1.5rem; /* Larger font size */
-                                    font-family: 'Arial Black', Gadget, sans-serif; /* Arial Black or fallback */
-                                    text-align: center; /* Centered */
-                                    margin-top: -0.3em; /* Negative margin to pull it up slightly */
+                                    font-size: 1.5rem;
+                                    font-family: 'Arial Black', Gadget, sans-serif;
+                                    text-align: center;
+                                    margin-top: -0.3em;
                                     line-height: 1.1;
                                 }
                             </style>
@@ -898,7 +1088,8 @@
 
                 let allReportsCombinedHtml = '';
                 allRecords.forEach(record => {
-                    allReportsCombinedHtml += getReportHtml(record, headers);
+                    // Wrap each report in its own container to ensure page breaks
+                    allReportsCombinedHtml += `<div class="report-container">${getReportHtml(record, headers)}</div>`;
                 });
                 printIframe.contentDocument.body.innerHTML = allReportsCombinedHtml;
 
@@ -938,5 +1129,3 @@
     </script>
 </body>
 </html>
-
-
