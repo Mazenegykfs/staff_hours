@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير ساعات التدريس الديناميكي (XLSX)</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Optional: Add Arial Black if it's a common web font or fallback for it -->
+    <link href="https://fonts.googleapis.com/css2?family=Arial+Black&display=swap" rel="stylesheet">
+    <!-- SheetJS CDN for XLSX file parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- html2pdf.js CDN for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff; /* Changed to white */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        .section-card {
+            background-color: #ffffff;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        .report-display-area {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .report-container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            max-width: 800px;
+            width: 100%;
+            margin-bottom: 1rem; /* Reduced space */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.5rem; /* Reduced space */
+        }
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 0.5rem; /* Reduced padding */
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2; /* Changed to a slightly darker light gray */
+            font-weight: 600;
+            color: #374151;
+        }
+        .text-center-aligned {
+            text-align: center;
+        }
+        .text-right-aligned {
+            text-align: right;
+        }
+        .signature-section {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 3rem;
+            text-align: center;
+            flex-wrap: wrap; /* Allows items to wrap on smaller screens */
+        }
+        .signature-box {
+            flex: 1;
+            min-width: 200px; /* Minimum width for each signature box */
+            margin: 0.5rem; /* Margin between boxes */
+            padding-top: 2rem;
+            border-top: 1px solid #d1d5db; /* Line for signature */
+            text-align: center; /* Center align content within signature box */
+        }
+        /* Loading indicator styles */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none; /* Hidden by default */
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Custom styles for "عميد المعهد" text */
+        .dean-title-text {
+            font-weight: bold;
+            font-size: 1.3em; /* Larger font size */
+            font-family: 'Arial Black', Gadget, sans-serif;
+            text-align: center; /* Centered */
+            margin-bottom: 0; /* Remove default paragraph margin */
+            line-height: 1.1; /* Tighter spacing */
+        }
+        .dean-name {
+            font-weight: bold;
+            font-size: 1.5rem; /* Larger font size */
+            font-family: 'Arial Black', Gadget, sans-serif;
+            text-align: center; /* Centered */
+            margin-top: -0.3em; /* Negative margin to pull it up slightly, placing "عميد المعهد" "above the middle" */
+            line-height: 1.1;
+        }
+
+        /* Styles specific to the header with logos for print */
+        .print-header-with-logos {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            position: relative; /* Needed for absolute positioning of images */
+            padding: 0 170px; /* Adjusted padding to accommodate larger logos */
+        }
+        .print-header-with-logos img {
+            position: absolute;
+            width: 160px; /* Enlarged size */
+            height: 160px; /* Enlarged size */
+            object-fit: contain;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .print-header-with-logos .logo-left {
+            left: 0;
+        }
+        .print-header-with-logos .logo-right {
+            right: 0;
+        }
+    </style>
+</head>
+<body class="font-inter">
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="section-card upload-section">
+        <h3 class="text-xl font-bold mb-4">تحميل ملف ساعات التدريس (XLSX)</h3>
+        <input type="file" id="xlsxFileInput" accept=".xlsx" class="mb-4 p-2 border rounded-md">
+        <button id="processXlsxButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+            معالجة الملف
+        </button>
+        <button id="printAllReportsButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out ml-4">
+            طباعة جميع التقارير PDF
+        </button>
+        <p id="messageBox" class="text-red-500 mt-2"></p>
+    </div>
+
+    <div class="section-card staff-selection-section" style="display: none;">
+        <h3 class="text-xl font-bold mb-4">اختيار عضو هيئة التدريس</h3>
+        <select id="staffSelect" class="p-2 border rounded-md w-full md:w-1/2">
+            <option value="">-- الرجاء الاختيار --</option>
+        </select>
+    </div>
+
+    <div id="reportDisplayArea" class="report-display-area mt-4">
+        <p class="text-gray-600">اختر عضواً من القائمة المنسدلة لعرض تقريره.</p>
+    </div>
+
+    <script>
+        // Ensure the DOM is fully loaded before running the script
+        document.addEventListener('DOMContentLoaded', function() {
+            let allRecords = []; // Stores parsed XLSX data (excluding headers, starting from Excel row 3)
+            let headers = [];     // Stores XLSX headers (from Excel row 2)
+
+            const xlsxFileInput = document.getElementById('xlsxFileInput');
+            const processXlsxButton = document.getElementById('processXlsxButton');
+            const staffSelect = document.getElementById('staffSelect');
+            const reportDisplayArea = document.getElementById('reportDisplayArea');
+            const messageBox = document.getElementById('messageBox');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const staffSelectionSection = document.querySelector('.staff-selection-section');
+            const printAllReportsButton = document.getElementById('printAllReportsButton');
+
+            processXlsxButton.addEventListener('click', processFile);
+            staffSelect.addEventListener('change', displaySelectedStaffReport);
+            printAllReportsButton.addEventListener('click', generateAllReportsAndPrint); // Event listener for new print button
+
+            // Define orderedArabicDays and dayMap here so they are accessible to all functions
+            const orderedArabicDays = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"]; 
+            const dayMap = {
+                'السبت': 'السبت',
+                'الاحد': 'الأحد', 
+                'الأحد': 'الأحد',
+                'الاثنين': 'الاثنين',
+                'الإثنين': 'الاثنين', 
+                'الثلاثاء': 'الثلاثاء',
+                'الار اربعاء': 'الأربعاء', // Corrected a typo here based on common user input
+                'الاربعاء': 'الأربعاء', // Ensure both forms map to the same
+                'الأربعاء': 'الأربعاء',
+                'الخميس': 'الخميس',
+                'الجمعة': 'الجمعة',
+                'اليوم الاول': 'السبت',
+                'اليوم الثاني': 'الأحد',
+                'اليوم الثالث': 'الاثنين',
+                'اليوم الرابع': 'الثلاثاء', 
+                'اليوم الخامس': 'الأربعاء'  
+            };
+
+            async function processFile() {
+                const file = xlsxFileInput.files[0];
+
+                if (!file) {
+                    messageBox.textContent = 'الرجاء اختيار ملف XLSX.';
+                    return;
+                }
+
+                // Clear previous data and messages
+                allRecords = [];
+                headers = [];
+                staffSelect.innerHTML = '<option value="">-- الرجاء الاختيار --</option>';
+                reportDisplayArea.innerHTML = '<p class="text-gray-600">اختر عضواً من القائمة المنسدلة لعرض تقريره.</p>';
+                messageBox.textContent = '';
+                staffSelectionSection.style.display = 'none';
+                loadingOverlay.style.display = 'flex'; // Show loading indicator
+
+                try {
+                    // Added a check and a small delay to ensure XLSX library is loaded
+                    if (typeof XLSX === 'undefined' || !XLSX.read) {
+                        messageBox.textContent = 'جارٍ تحميل مكتبة معالجة الملفات... الرجاء الانتظار قليلاً وإعادة المحاولة.';
+                        await new Promise(resolve => setTimeout(resolve, 500)); // Wait 0.5 seconds
+                        if (typeof XLSX === 'undefined' || !XLSX.read) {
+                            throw new Error('لم يتم تحميل مكتبة XLSX. يرجى التحقق من اتصالك بالإنترنت أو إعادة تحميل الصفحة.');
+                        }
+                    }
+
+                    const data = await readFileAsArrayBuffer(file);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+
+                    const rawSheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+
+                    if (rawSheetData.length < 3) {
+                        messageBox.textContent = 'الملف فارغ أو لا يحتوي على بيانات كافية (يتوقع رؤوس في الصف الثاني وبيانات في الصف الثالث).';
+                        loadingOverlay.style.display = 'none';
+                        return;
+                    }
+
+                    headers = rawSheetData[1];
+                    allRecords = rawSheetData.slice(2);
+                    allRecords = allRecords.filter(row => row && row.some(cell => String(cell).trim() !== ''));
+
+                    if (allRecords.length === 0) {
+                        messageBox.textContent = 'لم يتم العثور على سجلات بيانات صالحة بعد رؤوس الأعمدة.';
+                        loadingOverlay.style.display = 'none';
+                        return;
+                    }
+
+                    populateStaffDropdown(allRecords, headers);
+                    staffSelectionSection.style.display = 'block';
+                    messageBox.textContent = 'تم تحميل البيانات بنجاح. الرجاء اختيار عضو هيئة التدريس.';
+
+                } catch (error) {
+                    console.error('Error processing XLSX file:', error);
+                    messageBox.textContent = `حدث خطأ أثناء معالجة الملف: ${error.message}`;
+                } finally {
+                    loadingOverlay.style.display = 'none';
+                }
+            }
+
+            function readFileAsArrayBuffer(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => resolve(event.target.result);
+                    reader.onerror = (event) => reject(new Error('خطأ في قراءة الملف: ' + event.target.error.message));
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+
+            function populateStaffDropdown(records, currentHeaders) {
+                const nameHeaderIndex = currentHeaders.findIndex(h => String(h).trim() === 'الأسم');
+
+                if (nameHeaderIndex === -1) {
+                    messageBox.textContent = 'خطأ: عمود "الأسم" غير موجود في الملف.';
+                    return;
+                }
+
+                const uniqueNames = new Set();
+                records.forEach(record => {
+                    if (record && record[nameHeaderIndex] !== undefined && String(record[nameHeaderIndex]).trim() !== '') {
+                        uniqueNames.add(String(record[nameHeaderIndex]).trim());
+                    }
+                });
+
+                staffSelect.innerHTML = '<option value="">-- الرجاء الاختيار --</option>';
+                uniqueNames.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    staffSelect.appendChild(option);
+                });
+            }
+
+            function displaySelectedStaffReport() {
+                const selectedName = staffSelect.value;
+                reportDisplayArea.innerHTML = '';
+
+                if (!selectedName) {
+                    reportDisplayArea.innerHTML = '<p class="text-gray-600">اختر عضواً من القائمة المنسدلة لعرض تقريره.</p>';
+                    return;
+                }
+
+                const nameHeaderIndex = headers.findIndex(h => String(h).trim() === 'الأسم');
+                const selectedRecord = allRecords.find(record => record && record[nameHeaderIndex] && String(record[nameHeaderIndex]).trim() === selectedName);
+
+                if (selectedRecord) {
+                    reportDisplayArea.innerHTML = getReportHtml(selectedRecord, headers);
+                } else {
+                    reportDisplayArea.innerHTML = `<p class="text-red-500">لم يتم العثور على بيانات لـ "${selectedName}".</p>`;
+                }
+            }
+
+            // Function to convert numbers to Arabic text (for integers up to 9999)
+            function numberToArabicText(num) {
+                if (num === 0) return "صفر";
+                if (typeof num !== 'number' || !Number.isInteger(num) || num < 0) return num;
+
+                const units = ["", "واحد", "اثنين", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة"];
+                const teens = ["", "أحد عشر", "اثنا عشر", "ثلاثة عشر", "أربعة عشر", "خمسة عشر", "ستة عشر", "سبعة عشر", "ثمانية عشر", "تسعة عشر"];
+                const tens = ["", "عشرة", "عشرون", "ثلاثون", "أربعون", "خمسون", "ستون", "سبعون", "ثمانون", "تسعون"];
+                const hundreds = ["", "مائة", "مئتان", "ثلاثمائة", "أربعمائة", "خمسمائة", "ستمائة", "سبعمائة", "ثمانمائة", "تسعمائة"];
+                const thousands = ["", "ألف", "ألفان", "ثلاثة آلاف", "أربعة آلاف", "خمسة آلاف", "ستة آلاف", "سبعة آلاف", "ثمانية آلاف", "تسعة آلاف"];
+                const thousandsPlural = ["آلاف", "ألف"]; 
+
+                let result = "";
+
+                if (num >= 1000) {
+                    const th = Math.floor(num / 1000);
+                    num %= 1000;
+
+                    if (th === 1) {
+                        result += thousands[1];
+                    } else if (th === 2) {
+                        result += thousands[2];
+                    } else if (th >= 3 && th <= 9) {
+                        result += units[th] + " " + thousandsPlural[0];
+                    } else if (th >= 11 && th <= 19) {
+                        result += teens[th - 10] + " " + thousandsPlural[1];
+                    } else {
+                        result += numberToArabicText(th) + " " + thousandsPlural[1];
+                    }
+                    if (num > 0) result += " و ";
+                }
+
+                if (num >= 100) {
+                    const h = Math.floor(num / 100);
+                    num %= 100;
+                    result += hundreds[h];
+                    if (num > 0) result += " و ";
+                }
+
+                if (num >= 11 && num <= 19) { // Handle teens first: 11-19
+                    result += teens[num - 10];
+                } else { // Then units and tens
+                    const u = num % 10;
+                    const t = Math.floor(num / 10);
+
+                    if (u > 0) {
+                        result += units[u];
+                    }
+                    if (t > 0) {
+                        if (u > 0) result += " و ";
+                        result += tens[t];
+                    }
+                }
+
+                // Special handling for 10-19 not caught by the above if it's the only part
+                if (result === "" && num > 0 && num < 20) {
+                    if (num === 10) return tens[1];
+                    return units[num]; // For 1-9
+                }
+                if (result === "" && num === 0) return "صفر";
+
+
+                return result.trim();
+            }
+
+            // New function to get Arabic month name
+            function getArabicMonthName(monthNumber) {
+                const arabicMonths = [
+                    "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+                    "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+                ];
+                // MonthNumber is 1-indexed (1 for January)
+                return arabicMonths[monthNumber - 1] || "";
+            }
+
+            // New function to normalize Arabic day names for consistent lookup and display
+            function normalizeArabicDayNameForComparison(dayName) {
+                if (!dayName) return '';
+                let normalized = String(dayName).trim();
+
+                const mappedDay = dayMap[normalized]; // dayMap is defined at a higher scope
+                if (mappedDay) {
+                    return mappedDay;
+                }
+                
+                return normalized; 
+            }
+
+            // This function now returns the HTML string for a single report
+            function getReportHtml(recordData, currentHeaders) {
+                // Helper to get data by header name (case-insensitive and trimmed)
+                const getField = (headerName) => {
+                    const headerIndex = currentHeaders.findIndex(h => String(h).trim() === headerName.trim());
+                    return headerIndex !== -1 ? (recordData[headerIndex] !== undefined ? recordData[headerIndex] : '') : '';
+                };
+
+                const name = getField('الأسم');
+                const degree = getField('الدرجة العلميه');
+                const department = getField('القسم');
+                const employer = getField('جهة العمل');
+
+                // --- Step 1: Populate weeklyScheduledHoursMap from Excel columns F:T ---
+                const weeklyScheduledHoursMap = new Map(); // This will hold the consolidated hours per normalized day name
+
+                const weeklyScheduleColumnIndexGroups = [
+                    { dayIdx: 5, theoreticalIdx: 6, practicalIdx: 7, defaultDayImplied: 'السبت', debugName: 'Day 1 (F:H)' },   
+                    { dayIdx: 8, theoreticalIdx: 9, practicalIdx: 10, defaultDayImplied: 'الأحد', debugName: 'Day 2 (I:K)' },  
+                    { dayIdx: 11, theoreticalIdx: 12, practicalIdx: 13, defaultDayImplied: 'الاثنين', debugName: 'Day 3 (L:N)' }, 
+                    { dayIdx: 14, theoreticalIdx: 15, practicalIdx: 16, defaultDayImplied: 'الثلاثاء', debugName: 'Day 4 (O:Q)' }, 
+                    { dayIdx: 17, theoreticalIdx: 18, practicalIdx: 19, defaultDayImplied: 'الأربعاء', debugName: 'Day 5 (R:T)' }  
+                ];
+
+                weeklyScheduleColumnIndexGroups.forEach(group => {
+                    const dayNameRaw = recordData[group.dayIdx];
+                    const theoreticalHoursRaw = recordData[group.theoreticalIdx];
+                    const practicalHoursRaw = recordData[group.practicalIdx];
+
+                    let currentDayName = String(dayNameRaw || '').trim();
+                    const theoreticalHours = parseFloat(theoreticalHoursRaw) || 0; 
+                    const practicalHours = parseFloat(practicalHoursRaw) || 0;     
+
+                    if (currentDayName === '' && (theoreticalHours > 0 || practicalHours > 0)) {
+                        currentDayName = group.defaultDayImplied;
+                    }
+
+                    if (currentDayName !== '') {
+                        const normalizedDayName = normalizeArabicDayNameForComparison(currentDayName);
+
+                        if (theoreticalHours > 0 || practicalHours > 0) { 
+                            if (weeklyScheduledHoursMap.has(normalizedDayName)) {
+                                const existing = weeklyScheduledHoursMap.get(normalizedDayName);
+                                existing.theoretical += theoreticalHours;
+                                existing.practical += practicalHours;
+                                weeklyScheduledHoursMap.set(normalizedDayName, existing);
+                            } else {
+                                weeklyScheduledHoursMap.set(normalizedDayName, { theoretical: theoreticalHours, practical: practicalHours });
+                            }
+                        }
+                    }
+                });
+
+                // --- Step 2: Prepare data for the first table (Weekly Hours Distribution) ---
+                const weeklyScheduledDaysForDisplay = [];
+                let totalScheduledTheoreticalHours = 0;
+                let totalScheduledPracticalHours = 0;
+
+                orderedArabicDays.forEach(day => {
+                    const normalizedDay = normalizeArabicDayNameForComparison(day);
+                    if (weeklyScheduledHoursMap.has(normalizedDay)) {
+                        const hours = weeklyScheduledHoursMap.get(normalizedDay);
+                        weeklyScheduledDaysForDisplay.push({
+                            day: normalizedDay,
+                            theoretical: hours.theoretical,
+                            practical: hours.practical
+                        });
+                        totalScheduledTheoreticalHours += hours.theoretical;
+                        totalScheduledPracticalHours += hours.practical;
+                    }
+                });
+
+                const remainingKeys = Array.from(weeklyScheduledHoursMap.keys()).filter(key => !orderedArabicDays.includes(key));
+                remainingKeys.sort().forEach(dayName => {
+                    const hours = weeklyScheduledHoursMap.get(dayName);
+                    weeklyScheduledDaysForDisplay.push({
+                        day: dayName,
+                        theoretical: hours.theoretical,
+                        practical: hours.practical
+                    });
+                    totalScheduledTheoreticalHours += hours.theoretical;
+                    totalScheduledPracticalHours += hours.practical;
+                });
+                
+                const totalScheduledWeeklyHours = totalScheduledTheoreticalHours + totalScheduledPracticalHours;
+
+
+                // --- Step 3: Process Attendance Records for the Second Table ---
+                const attendanceDates = [];
+                let totalTheoreticalHoursAttendance = 0;
+                let totalPracticalHoursAttendance = 0;
+                let attendanceMonthHeader = "استمارات شهر أبريل - مايو 2024-2025م"; // Default value
+
+                for (let i = 1; i <= 30; i++) { // Max days in month
+                    let dateValue = getField(`يوم${i}`);
+
+                    let theoreticalHoursToday = 0;
+                    let practicalHoursToday = 0;
+                    let formattedDate = '';
+                    let dayOfWeekFromDate = '';
+
+                    if (dateValue) {
+                        let dateObj;
+                        if (typeof dateValue === 'number') {
+                            const parsedExcelDate = XLSX.SSF.parse_date_code(dateValue);
+                            if (parsedExcelDate) {
+                                dateObj = new Date(parsedExcelDate.y, parsedExcelDate.m - 1, parsedExcelDate.d);
+                            }
+                        } else {
+                            dateObj = new Date(String(dateValue).replace(/(\d{4})\/(\d{2})\/(\d{2})/, '$1-$2-$3'));
+                        }
+
+                        if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
+                            formattedDate = dateObj.toLocaleDateString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                            let rawDayOfWeek = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });
+                            dayOfWeekFromDate = normalizeArabicDayNameForComparison(rawDayOfWeek);
+                            
+                            if (i === 1) { 
+                                const monthNumber = dateObj.getMonth() + 1;
+                                const arabicMonth = getArabicMonthName(monthNumber);
+                                const year = dateObj.getFullYear();
+                                attendanceMonthHeader = `استمارة شهر ${arabicMonth} ${year}-${year + 1}م`;
+                            }
+
+                            const scheduled = weeklyScheduledHoursMap.get(dayOfWeekFromDate);
+
+                            if (scheduled) {
+                                theoreticalHoursToday = scheduled.theoretical;
+                                practicalHoursToday = scheduled.practical;
+                            }
+                        } else {
+                            formattedDate = String(dateValue);
+                            dayOfWeekFromDate = 'تاريخ غير صالح';
+                        }
+                    }
+
+                    if (formattedDate) {
+                        attendanceDates.push({
+                            serial: i,
+                            date: formattedDate,
+                            day: dayOfWeekFromDate,
+                            theoretical: theoreticalHoursToday,
+                            practical: practicalHoursToday
+                        });
+                        totalTheoreticalHoursAttendance += theoreticalHoursToday;
+                        totalPracticalHoursAttendance += practicalHoursToday;
+                    }
+                }
+
+                // Helper function for displaying values or a dash if empty/zero
+                const displayValueOrDash = (value) => {
+                    return (value === 0 || value === '' || value === undefined || value === null) ? '-' : value;
+                };
+
+                // Return the full HTML string for one report
+                return `
+                    <div class="report-content-to-print"> <!-- This div helps html2pdf target the specific content -->
+                        <!-- Header Section -->
+                        <div class="text-center-aligned mb-4 flex justify-center items-center relative">
+                            <img src="https://placehold.co/160x160/f2f2f2/000000?text=Logo+01" alt="Logo 01" class="absolute left-0" style="left:0; top: 50%; transform: translateY(-50%); width: 160px; height: 160px;">
+                            <h1 class="text-2xl font-bold text-gray-800 mb-2 mx-4">وزارة التعليم العالي</h1>
+                            <img src="https://placehold.co/160x160/f2f2f2/000000?text=Logo+02" alt="Logo 02" class="absolute right-0" style="right:0; top: 50%; transform: translateY(-50%); width: 160px; height: 160px;">
+                        </div>
+                        <div class="text-center-aligned mb-4">
+                            <h2 class="text-xl font-semibold text-gray-700 mb-1">المعهد العالي للهندسة والتكنولوجيا</h2>
+                            <h3 class="text-lg text-gray-600">بكفر الشيخ</h3>
+                        </div>
+
+                        <!-- DYNAMICALLY GENERATED Attendance Month Header -->
+                        <div class="mb-4">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 text-center-aligned">${attendanceMonthHeader}</h4>
+                        </div>
+
+                        <!-- Faculty Member Data Section -->
+                        <div class="mb-4">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 text-center-aligned">بيانات عضو هيئة التدريس / الهيئة المعاونة</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                                <div class="flex justify-between border-b pb-2">
+                                    <span class="font-medium">الاسم:</span>
+                                    <span class="flex-grow text-right">${displayValueOrDash(name)}</span>
+                                </div>
+                                <div class="flex justify-between border-b pb-2">
+                                    <span class="font-medium">الدرجة:</span>
+                                    <span class="flex-grow text-right">${displayValueOrDash(degree)}</span>
+                                </div>
+                                <div class="flex justify-between border-b pb-2">
+                                    <span class="font-medium">القسم:</span>
+                                    <span class="flex-grow text-right">${displayValueOrDash(department)}</span>
+                                </div>
+                                <div class="flex justify-between border-b pb-2">
+                                    <span class="font-medium">جهة الانتداب:</span>
+                                    <span class="flex-grow text-right">${displayValueOrDash(employer)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Weekly Hours Distribution Section -->
+                        <div class="mb-4">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 text-center-aligned">توزيع الساعات اسبوعيا</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2" class="w-1/3">ايام الحضور</th>
+                                        <th colspan="2" class="w-2/3">ساعات الدرس</th>
+                                    </tr>
+                                    <tr>
+                                        <th>نظري</th>
+                                        <th>درس / اشراف</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${weeklyScheduledDaysForDisplay.map(schedule => `
+                                        <tr>
+                                            <td class="text-right-aligned">${displayValueOrDash(schedule.day)}</td>
+                                            <td>${displayValueOrDash(schedule.theoretical)}</td>
+                                            <td>${displayValueOrDash(schedule.practical)}</td>
+                                        </tr>
+                                    `).join('')}
+                                    ${weeklyScheduledDaysForDisplay.length === 0 ? `
+                                        <tr>
+                                            <td colspan="3" class="text-gray-500">(لا توجد أيام عمل مجدولة لهذا العضو في بيانات الأسبوع)</td>
+                                        </tr>
+                                    ` : ''}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td class="font-bold text-right-aligned">اجمالي ساعات اسبوعيا</td>
+                                        <td class="font-bold">${displayValueOrDash(totalScheduledTheoreticalHours)}</td>
+                                        <td class="font-bold">${displayValueOrDash(totalScheduledPracticalHours)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                            <!-- Totals outside the table for Weekly Distribution -->
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mt-6 text-right-aligned md:text-center">
+                                <div class="flex-1 mb-2 md:mb-0">
+                                    <div class="font-bold text-gray-700">اجمالي الساعات اسبوعيا:</div>
+                                    <div class="text-gray-700">${displayValueOrDash(totalScheduledTheoreticalHours + totalScheduledPracticalHours)} ${numberToArabicText(totalScheduledTheoreticalHours + totalScheduledPracticalHours)}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Original Attendance Records Section (Table + Totals) -->
+                        <div class="mb-4">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>م</th>
+                                        <th>التاريخ</th>
+                                        <th>اليوم</th>
+                                        <th>نظري</th>
+                                        <th>درس / اشراف</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${attendanceDates.map(att => `
+                                        <tr>
+                                            <td>${displayValueOrDash(att.serial)}</td>
+                                            <td>${displayValueOrDash(att.date)}</td>
+                                            <td>${displayValueOrDash(att.day)}</td>
+                                            <td>${displayValueOrDash(att.theoretical)}</td>
+                                            <td>${displayValueOrDash(att.practical)}</td>
+                                        </tr>
+                                    `).join('')}
+                                    <!-- Fill remaining rows up to 20 if fewer dates are present -->
+                                    ${Array.from({ length: Math.max(0, 20 - attendanceDates.length) }, (_, i) => `
+                                        <tr><td>${displayValueOrDash(attendanceDates.length + i + 1)}</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                                    `).join('')}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="font-bold text-right-aligned">الإجمالي (داخل الجدول)</td>
+                                        <td class="font-bold">${displayValueOrDash(totalTheoreticalHoursAttendance)}</td>
+                                        <td class="font-bold">${displayValueOrDash(totalPracticalHoursAttendance)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                            
+                            <!-- Totals outside the table -->
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mt-6 text-right-aligned md:text-center">
+                                <div class="flex-1 mb-2 md:mb-0">
+                                    <div class="font-bold text-gray-700">اجمالي عدد ساعات النظري:</div>
+                                    <div class="text-gray-700">${displayValueOrDash(totalTheoreticalHoursAttendance)} ${numberToArabicText(totalTheoreticalHoursAttendance)}</div>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-bold text-gray-700">اجمالي عدد ساعات الدرس الاشراف:</div>
+                                    <div class="text-gray-700">${displayValueOrDash(totalPracticalHoursAttendance)} ${numberToArabicText(totalPracticalHoursAttendance)}</div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Signatures Section -->
+                        <div class="signature-section mt-12">
+                            <div class="signature-box">
+                                <p>التوقيع</p>
+                            </div>
+                            <div class="signature-box">
+                                <p>شئون هيئة التدريس</p>
+                            </div>
+                            <div class="signature-box">
+                                <p>أمين المعهد</p>
+                            </div>
+                            <div class="signature-box">
+                                <p class="dean-title-text">عميد المعهد</p>
+                                <p class="dean-name">( ا.د. مصطفي كامل )</p>
+                            </div>
+                        </div>
+                    </div> <!-- End of report-content-to-print -->
+                `;
+            }
+
+            // New function to generate all reports and initiate PDF print
+            async function generateAllReportsAndPrint() {
+                if (allRecords.length === 0) {
+                    messageBox.textContent = 'لا توجد بيانات لإنشاء التقارير. الرجاء معالجة ملف XLSX أولاً.';
+                    return;
+                }
+
+                loadingOverlay.style.display = 'flex';
+                messageBox.textContent = 'جارٍ إعداد التقارير للطباعة... يرجى الانتظار.';
+                reportDisplayArea.innerHTML = ''; // Clear display area while preparing PDF
+
+
+                // Create a temporary, hidden iframe to render all reports for PDF generation
+                const printIframe = document.createElement('iframe');
+                printIframe.style.position = 'absolute';
+                printIframe.style.left = '-9999px';
+                printIframe.style.width = '210mm'; // A4 width
+                printIframe.style.height = '297mm'; // A4 height, adjusted if needed for content
+                document.body.appendChild(printIframe);
+
+                // Wait for the iframe to load
+                await new Promise(resolve => {
+                    printIframe.onload = resolve;
+                    // Write the basic HTML structure to the iframe document
+                    printIframe.contentDocument.open();
+                    printIframe.contentDocument.write(`
+                        <!DOCTYPE html>
+                        <html lang="ar" dir="rtl">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>جميع تقارير ساعات التدريس</title>
+                            <!-- Include CSS from the main page -->
+                            <style>
+                                body {
+                                    font-family: 'Inter', sans-serif;
+                                    background-color: #ffffff;
+                                    margin: 0;
+                                    padding: 10mm; /* A bit of margin for PDF */
+                                }
+                                .report-container {
+                                    background-color: #ffffff;
+                                    padding: 2.5rem;
+                                    border-radius: 0.75rem;
+                                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                                    max-width: 190mm; /* Adjusted for A4 width with margins */
+                                    width: 100%;
+                                    margin-bottom: 1rem; /* Reduced space for print */
+                                    page-break-after: always; /* Ensure each report starts on a new page */
+                                }
+                                .report-container:last-child {
+                                    page-break-after: avoid; /* No page break after the last report */
+                                }
+                                table {
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                    margin-top: 0.5rem; /* Reduced space for print */
+                                }
+                                th, td {
+                                    border: 1px solid #e5e7eb;
+                                    padding: 0.5rem; /* Reduced padding for print */
+                                    text-align: center;
+                                }
+                                th {
+                                    background-color: #f2f2f2;
+                                    font-weight: 600;
+                                    color: #374151;
+                                }
+                                .text-center-aligned {
+                                    text-align: center;
+                                }
+                                .text-right-aligned {
+                                    text-align: right;
+                                }
+                                .signature-section {
+                                    display: flex;
+                                    justify-content: space-around;
+                                    margin-top: 3rem;
+                                    text-align: center;
+                                    flex-wrap: wrap;
+                                }
+                                .signature-box {
+                                    flex: 1;
+                                    min-width: 200px;
+                                    margin: 0.5rem;
+                                    padding-top: 2rem;
+                                    border-top: 1px solid #d1d5db;
+                                    text-align: center; /* Centered for print iframe */
+                                }
+                                /* Additional styles from Tailwind might be needed directly if not covered by basic styles */
+                                .grid { display: grid; }
+                                .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+                                .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                                .gap-4 { gap: 1rem; }
+                                .flex { display: flex; }
+                                .justify-between { justify-content: space-between; }
+                                .border-b { border-bottom-width: 1px; }
+                                .pb-2 { padding-bottom: 0.5rem; }
+                                .font-medium { font-weight: 500; }
+                                .flex-grow { flex-grow: 1; }
+                                .text-left { text-align: left; }
+                                .text-right { text-align: right; }
+                                .text-xl { font-size: 1.25rem; }
+                                .font-bold { font-weight: 700; }
+                                .mb-4 { margin-bottom: 1rem; } /* Adjusted for print iframe */
+                                .mb-2 { margin-bottom: 0.5rem; }
+                                .mb-8 { margin-bottom: 2rem; }
+                                .mt-6 { margin-top: 1.5rem; }
+                                .mt-12 { margin-top: 3rem; }
+                                .text-gray-800 { color: #1f2937; }
+                                .text-gray-700 { color: #374151; }
+                                .text-gray-600 { color: #4b5563; }
+                                .text-gray-500 { color: #6b7280; }
+                                /* Styles specific to the header with logos for print */
+                                .print-header-with-logos {
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    text-align: center;
+                                    position: relative; /* Needed for absolute positioning of images */
+                                    padding: 0 170px; /* Adjusted padding to accommodate larger logos */
+                                }
+                                .print-header-with-logos img {
+                                    position: absolute;
+                                    width: 160px; /* Enlarged size */
+                                    height: 160px; /* Enlarged size */
+                                    object-fit: contain;
+                                    top: 50%;
+                                    transform: translateY(-50%);
+                                }
+                                .print-header-with-logos .logo-left {
+                                    left: 0;
+                                }
+                                .print-header-with-logos .logo-right {
+                                    right: 0;
+                                }
+                                /* Custom styles for "عميد المعهد" text in print iframe */
+                                .dean-title-text {
+                                    font-weight: bold;
+                                    font-size: 1.3em; /* Larger font size */
+                                    font-family: 'Arial Black', Gadget, sans-serif; /* Arial Black or fallback */
+                                    text-align: center; /* Centered */
+                                    margin-bottom: 0;
+                                    line-height: 1.1;
+                                }
+                                .dean-name {
+                                    font-weight: bold;
+                                    font-size: 1.5rem; /* Larger font size */
+                                    font-family: 'Arial Black', Gadget, sans-serif; /* Arial Black or fallback */
+                                    text-align: center; /* Centered */
+                                    margin-top: -0.3em; /* Negative margin to pull it up slightly */
+                                    line-height: 1.1;
+                                }
+                            </style>
+                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+                            <link href="https://fonts.googleapis.com/css2?family=Arial+Black&display=swap" rel="stylesheet">
+                        </head>
+                        <body></body>
+                        </html>
+                    `);
+                    printIframe.contentDocument.close();
+                });
+
+                let allReportsCombinedHtml = '';
+                allRecords.forEach(record => {
+                    allReportsCombinedHtml += getReportHtml(record, headers);
+                });
+                printIframe.contentDocument.body.innerHTML = allReportsCombinedHtml;
+
+
+                const options = {
+                    margin: [10, 10, 10, 10],
+                    filename: 'جميع_تقارير_ساعات_التدريس.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { 
+                        scale: 2, 
+                        logging: false, // Set to true for debugging html2canvas issues
+                        dpi: 192, 
+                        letterRendering: true,
+                        useCORS: true,
+                        windowWidth: printIframe.offsetWidth, // Ensure html2canvas uses iframe's dimensions
+                        windowHeight: printIframe.offsetHeight
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                try {
+                    await html2pdf().from(printIframe.contentWindow.document.body).set(options).save();
+                    messageBox.textContent = 'تم إنشاء ملف PDF بنجاح لجميع التقارير.';
+                } catch (error) {
+                    console.error('Error generating PDF:', error);
+                    messageBox.textContent = `حدث خطأ أثناء إنشاء ملف PDF: ${error.message}`;
+                } finally {
+                    loadingOverlay.style.display = 'none';
+                    // Clean up the temporary iframe
+                    if (printIframe.parentNode) {
+                        printIframe.parentNode.removeChild(printIframe);
+                    }
+                    displaySelectedStaffReport(); 
+                }
+            }
+        }); // End of DOMContentLoaded
+    </script>
+</body>
+</html>
