@@ -21,6 +21,7 @@
             flex-direction: column;
             align-items: center;
             padding: 2rem;
+            min-height: 100vh; /* Ensure body takes full viewport height */
         }
         .section-card {
             background-color: #ffffff;
@@ -68,21 +69,48 @@
         .text-right-aligned {
             text-align: right;
         }
-        .signature-section {
+        /* New styles for signature section */
+        .signature-section-new {
             display: flex;
             justify-content: space-around;
             margin-top: 3rem;
             text-align: center;
-            flex-wrap: wrap; /* Allows items to wrap on smaller screens */
+            flex-wrap: wrap;
+            width: 100%; /* Ensure it spans full width for better distribution */
         }
-        .signature-box {
+        .signature-block {
             flex: 1;
             min-width: 200px; /* Minimum width for each signature box */
-            margin: 0.5rem; /* Margin between boxes */
-            padding-top: 2rem;
-            border-top: 1px solid #d1d5db; /* Line for signature */
-            text-align: center; /* Center align content within signature box */
+            margin: 0 0.5rem; /* Margin between boxes */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end; /* Align content to the bottom */
+            position: relative;
+            padding-bottom: 0.5rem; /* Space for the name below the line */
         }
+        .signature-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 0.5rem; /* Space between title and line */
+            color: #374151; /* Dark gray for text */
+        }
+        .signature-line {
+            width: 90%; /* Line for signature */
+            border-bottom: 1px solid #d1d5db;
+            margin-bottom: 0.5rem; /* Space between line and name */
+        }
+        .signature-name-actual, .signature-name-placeholder {
+            font-size: 1rem;
+            color: #4b5563; /* Slightly lighter gray for names */
+            font-weight: 500;
+        }
+        .signature-name-actual {
+            font-weight: bold; /* Bold the actual name */
+            font-family: 'Arial Black', Gadget, sans-serif;
+            margin-top: -0.3em; /* Adjust to pull up slightly */
+        }
+
         /* Loading indicator styles */
         .loading-overlay {
             position: fixed;
@@ -109,24 +137,7 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        /* Custom styles for "عميد المعهد" text */
-        .dean-title-text {
-            font-weight: bold;
-            font-size: 1.3em; /* Larger font size */
-            font-family: 'Arial Black', Gadget, sans-serif;
-            text-align: center; /* Centered */
-            margin-bottom: 0; /* Remove default paragraph margin */
-            line-height: 1.1; /* Tighter spacing */
-        }
-        .dean-name {
-            font-weight: bold;
-            font-size: 1.5rem; /* Larger font size */
-            font-family: 'Arial Black', Gadget, sans-serif;
-            text-align: center; /* Centered */
-            margin-top: -0.3em; /* Negative margin to pull it up slightly, placing "عميد المعهد" "above the middle" */
-            line-height: 1.1;
-        }
-
+        
         /* Styles specific to the header with logos for print */
         .print-header-with-logos {
             display: flex;
@@ -150,9 +161,144 @@
         .print-header-with-logos .logo-right {
             right: 0;
         }
+        /* Header specific styling */
+        .app-header {
+            background-color: #2196f3; /* Bright blue as requested */
+            color: white;
+            padding: 1rem;
+            width: 100%;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            border-radius: 0.75rem; /* Rounded corners */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        /* Button styling */
+        .bg-green-500 {
+            background-color: #4CAF50; /* Green for accept/execute */
+        }
+        .hover\:bg-green-700:hover {
+            background-color: #45a049;
+        }
+        .bg-red-500 {
+            background-color: #f44336; /* Red for cancel/delete/stop (not used in this specific button, but good to define) */
+        }
+        .hover\:bg-red-700:hover {
+            background-color: #da190b;
+        }
+        .bg-indigo-500 { /* For print current report button */
+            background-color: #3f51b5;
+        }
+        .hover\:bg-indigo-700:hover {
+            background-color: #303f9f;
+        }
+
+        /* --- Print Specific Styles --- */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #ffffff; 
+                color: #000000; /* Ensure all body text is black in print */
+            }
+            .app-header, .upload-section, .staff-selection-section {
+                display: none !important; 
+            }
+            .report-display-area {
+                margin: 0;
+                padding: 0;
+                width: auto; 
+                align-items: flex-start; 
+            }
+            .report-content-to-print {
+                width: 190mm; /* Fixed width for A4 portrait content area */
+                max-width: 190mm; /* Ensure it doesn't exceed this */
+                margin: 0 auto; /* Center content on page */
+                padding: 3mm; /* Further reduced internal padding for print */
+                box-shadow: none;
+                border: none;
+                background-color: #ffffff;
+            }
+            .report-content-to-print h1, .report-content-to-print h2, .report-content-to-print h3, .report-content-to-print h4 {
+                color: #000000 !important; /* Force all headings to black */
+                line-height: 1.1 !important; /* Tighten line height for headings */
+                margin-bottom: 0.3rem !important; /* Reduce spacing below headings */
+            }
+            .report-content-to-print p, .report-content-to-print span {
+                color: #000000 !important; /* Force all text to black */
+                line-height: 1.1 !important; /* Adjust line height for print */
+                margin-bottom: 0.1rem !important; /* Reduce paragraph spacing */
+            }
+            .print-header-with-logos {
+                padding: 0 10mm !important; /* Reduced padding for logos in print */
+                margin-bottom: 0.5rem !important; /* Reduced margin below header */
+            }
+            .print-header-with-logos img {
+                width: 100px !important; /* Smaller logo size in print */
+                height: 100px !important; /* Smaller logo size in print */
+            }
+            .report-content-to-print table {
+                margin-top: 0.2rem !important; /* Reduced table top margin */
+                margin-bottom: 0.2rem !important; /* Reduced table bottom margin */
+            }
+            .report-content-to-print th, .report-content-to-print td {
+                padding: 0.2rem !important; /* Reduced table cell padding */
+                font-size: 0.75rem !important; /* Smaller font for table cells */
+                line-height: 1.1 !important; /* Tighten line height in tables */
+            }
+            .report-content-to-print .mb-4 {
+                margin-bottom: 0.3rem !important; /* Reduced margin between general sections for print */
+            }
+            .signature-section-new {
+                margin-top: 0.8rem !important; /* Reduced top margin for signature section */
+                flex-direction: column; /* Stack signatures vertically for print */
+                align-items: flex-start; /* Align all signature blocks to the start */
+            }
+            .signature-block {
+                min-width: auto !important; /* Allow width to be determined by content */
+                width: 100% !important; /* Take full width */
+                margin: 0 !important; /* Remove horizontal margin */
+                padding-bottom: 0.1rem !important; /* Reduced padding below signature line */
+                text-align: left !important; /* Align content within block to left */
+                align-items: flex-start !important; /* Align content to start within block */
+            }
+            .signature-title {
+                font-size: 0.8em !important; /* Smaller signature title */
+            }
+            .signature-name-actual, .signature-name-placeholder {
+                font-size: 0.7em !important; /* Smaller signature names */
+            }
+            /* Specific styling for the Dean's signature block */
+            .dean-signature {
+                margin-top: 1rem !important; /* Add more space above dean's signature */
+                padding-top: 0.5rem !important; /* Add padding to push down content */
+                font-size: 1.2em !important; /* Larger font for dean's signature */
+                font-weight: bold !important; /* Bold for dean's signature */
+                text-align: left !important; /* Align to left for dean's signature */
+                width: 100% !important; /* Ensure it takes full width */
+                align-items: flex-start !important; /* Align content to start within block */
+            }
+            .dean-signature .signature-title {
+                font-size: 1.2em !important; /* Larger title for dean's signature */
+                font-weight: bold !important;
+            }
+            .dean-signature .signature-name-actual {
+                font-size: 1.2em !important; /* Larger name for dean's signature */
+                font-weight: bold !important;
+            }
+            .combined-reports-container .report-content-to-print:not(:last-child) {
+                page-break-after: always !important; 
+            }
+        }
     </style>
 </head>
-<body class="font-inter">
+<body>
+    <!-- Header -->
+    <div class="app-header">
+        Developed by Dr. Mazen Badawy – Doctorate of English Teaching & Testing
+    </div>
+
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
     </div>
@@ -163,11 +309,11 @@
         <input type="file" id="xlsxFileInput" accept=".xlsx" class="mb-4 p-2 border rounded-md">
         
         <!-- Buttons for printing -->
-        <div class="flex justify-center mt-4 space-x-4">
-            <button id="printAllReportsButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+        <div class="flex flex-col sm:flex-row justify-center mt-4 space-y-4 sm:space-y-0 sm:space-x-4 w-full">
+            <button id="printAllReportsButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out w-full sm:w-auto text-lg">
                 طباعة جميع التقارير PDF
             </button>
-            <button id="printCurrentReportButton" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+            <button id="printCurrentReportButton" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out w-full sm:w-auto text-lg">
                 طباعة التقرير الحالي PDF
             </button>
         </div>
@@ -190,7 +336,7 @@
         // Ensure the DOM is fully loaded before running the script
         document.addEventListener('DOMContentLoaded', function() {
             let allRecords = []; // Stores parsed XLSX data (excluding headers, starting from Excel row 3)
-            let headers = [];     // Stores XLSX headers (from Excel row 2)
+            let headers = [];    // Stores XLSX headers (from Excel row 2)
 
             const xlsxFileInput = document.getElementById('xlsxFileInput');
             const staffSelect = document.getElementById('staffSelect');
@@ -366,9 +512,7 @@
                         result += thousands[2];
                     } else if (th >= 3 && th <= 9) {
                         result += units[th] + " " + thousandsPlural[0];
-                    } else if (th >= 11 && th <= 19) {
-                        result += teens[th - 10] + " " + thousandsPlural[1];
-                    } else {
+                    } else { // For 10 and above thousands (e.g., 10 ألف, 20 ألف)
                         result += numberToArabicText(th) + " " + thousandsPlural[1];
                     }
                     if (num > 0) result += " و ";
@@ -396,12 +540,10 @@
                     }
                 }
 
-                // Special handling for 10-19 not caught by the above if it's the only part
-                if (result === "" && num > 0 && num < 20) {
-                    if (num === 10) return tens[1];
-                    return units[num]; // For 1-9
-                }
-                if (result === "" && num === 0) return "صفر";
+                // Special handling for 10 if it's the only part left
+                if (result === "" && num === 10) return tens[1];
+                // If result is still empty and num is between 1 and 9
+                if (result === "" && num > 0 && num < 10) return units[num];
 
 
                 return result.trim();
@@ -461,7 +603,7 @@
 
                     let currentDayName = String(dayNameRaw || '').trim();
                     const theoreticalHours = parseFloat(theoreticalHoursRaw) || 0; 
-                    const practicalHours = parseFloat(practicalHoursRaw) || 0;     
+                    const practicalHours = parseFloat(practicalHoursRaw) || 0;      
 
                     if (currentDayName === '' && (theoreticalHours > 0 || practicalHours > 0)) {
                         currentDayName = group.defaultDayImplied;
@@ -589,9 +731,9 @@
                     <div class="report-content-to-print"> <!-- This div helps html2pdf target the specific content -->
                         <!-- Header Section -->
                         <div class="text-center-aligned mb-4 flex justify-center items-center relative print-header-with-logos">
-                            <img src="01.png" alt="Logo 01" class="logo-left">
+                            <img src="https://placehold.co/160x160/ffffff/000000?text=Logo+1" alt="Logo 01" class="logo-left">
                             <h1 class="text-2xl font-bold text-gray-800 mb-2 mx-4">وزارة التعليم العالي</h1>
-                            <img src="02.png" alt="Logo 02" class="logo-right">
+                            <img src="https://placehold.co/160x160/ffffff/000000?text=Logo+2" alt="Logo 02" class="logo-right">
                         </div>
                         <div class="text-center-aligned mb-4">
                             <h2 class="text-xl font-semibold text-gray-700 mb-1">المعهد العالي للهندسة والتكنولوجيا</h2>
@@ -633,7 +775,7 @@
                                 <thead>
                                     <tr>
                                         <th rowspan="2" class="w-1/3">ايام الحضور</th>
-                                        <th colspan="2" class="w-2/3">ساعات الدرس</th>
+                                        <th colspan="2" class="w-2/3">ساعات التدريس</th>
                                     </tr>
                                     <tr>
                                         <th>نظري</th>
@@ -648,39 +790,30 @@
                                             <td>${displayValueOrDash(schedule.practical)}</td>
                                         </tr>
                                     `).join('')}
-                                    ${weeklyScheduledDaysForDisplay.length === 0 ? `
-                                        <tr>
-                                            <td colspan="3" class="text-gray-500">(لا توجد أيام عمل مجدولة لهذا العضو في بيانات الأسبوع)</td>
-                                        </tr>
-                                    ` : ''}
-                                </tbody>
-                                <tfoot>
                                     <tr>
-                                        <td class="font-bold text-right-aligned">اجمالي ساعات اسبوعيا</td>
+                                        <td class="text-right-aligned font-bold">إجمالي الساعات الأسبوعية</td>
                                         <td class="font-bold">${displayValueOrDash(totalScheduledTheoreticalHours)}</td>
                                         <td class="font-bold">${displayValueOrDash(totalScheduledPracticalHours)}</td>
                                     </tr>
-                                </tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-right-aligned font-bold">إجمالي ساعات الجدول: ${displayValueOrDash(totalScheduledWeeklyHours)} ساعة</td>
+                                    </tr>
+                                </tbody>
                             </table>
-                            <!-- Totals outside the table for Weekly Distribution -->
-                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mt-6 text-right-aligned md:text-center">
-                                <div class="flex-1 mb-2 md:mb-0">
-                                    <div class="font-bold text-gray-700">اجمالي الساعات اسبوعيا:</div>
-                                    <div class="text-gray-700">${displayValueOrDash(totalScheduledTheoreticalHours + totalScheduledPracticalHours)} ${numberToArabicText(totalScheduledTheoreticalHours + totalScheduledPracticalHours)}</div>
-                                </div>
-                            </div>
                         </div>
 
-                        <!-- Original Attendance Records Section (Table + Totals) -->
+                        <!-- Monthly Attendance Section -->
                         <div class="mb-4">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 text-center-aligned">عدد أيام الغياب والحضور الفعلي شهريا</h4>
                             <table>
                                 <thead>
                                     <tr>
                                         <th>م</th>
-                                        <th>التاريخ</th>
+                                        <th>تاريخ الحضور</th>
                                         <th>اليوم</th>
                                         <th>نظري</th>
-                                        <th>درس / اشراف</th>
+                                        <th>عملي</th>
+                                        <th>توقيع</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -691,442 +824,147 @@
                                             <td>${displayValueOrDash(att.day)}</td>
                                             <td>${displayValueOrDash(att.theoretical)}</td>
                                             <td>${displayValueOrDash(att.practical)}</td>
+                                            <td></td> <!-- Signature column, left empty for manual signature -->
                                         </tr>
                                     `).join('')}
-                                    <!-- Fill remaining rows up to 20 if fewer dates are present -->
-                                    ${Array.from({ length: Math.max(0, 20 - attendanceDates.length) }, (_, i) => `
-                                        <tr><td>${displayValueOrDash(attendanceDates.length + i + 1)}</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
-                                    `).join('')}
-                                </tbody>
-                                <tfoot>
                                     <tr>
-                                        <td colspan="3" class="font-bold text-right-aligned">الإجمالي (داخل الجدول)</td>
+                                        <td colspan="3" class="text-right-aligned font-bold">إجمالي الساعات الفعلية</td>
                                         <td class="font-bold">${displayValueOrDash(totalTheoreticalHoursAttendance)}</td>
                                         <td class="font-bold">${displayValueOrDash(totalPracticalHoursAttendance)}</td>
+                                        <td></td>
                                     </tr>
-                                </tfoot>
+                                </tbody>
                             </table>
-                            
-                            <!-- Totals outside the table -->
-                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mt-6 text-right-aligned md:text-center">
-                                <div class="flex-1 mb-2 md:mb-0">
-                                    <div class="font-bold text-gray-700">اجمالي عدد ساعات النظري:</div>
-                                    <div class="text-gray-700">${displayValueOrDash(totalTheoreticalHoursAttendance)} ${numberToArabicText(totalTheoreticalHoursAttendance)}</div>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="font-bold text-gray-700">اجمالي عدد ساعات الدرس الاشراف:</div>
-                                    <div class="text-gray-700">${displayValueOrDash(totalPracticalHoursAttendance)} ${numberToArabicText(totalPracticalHoursAttendance)}</div>
-                                </div>
-                            </div>
-
                         </div>
 
-                        <!-- Signatures Section -->
-                        <div class="signature-section mt-12">
-                            <div class="signature-box">
-                                <p>التوقيع</p>
+                        <!-- Summary -->
+                        <div class="text-right-aligned mb-8">
+                            <p class="mb-2" style="color: #000000;"><strong>إجمالي ساعات الدرس/الاشراف الفعلية:</strong> ${displayValueOrDash(totalPracticalHoursAttendance)} (${numberToArabicText(totalPracticalHoursAttendance)}) ساعة</p>
+                            <p class="mb-2" style="color: #000000;"><strong>إجمالي ساعات المحاضرات الفعلية:</strong> ${displayValueOrDash(totalTheoreticalHoursAttendance)} (${numberToArabicText(totalTheoreticalHoursAttendance)}) ساعة</p>
+                        </div>
+
+                        <!-- New Signatures Section -->
+                        <div class="signature-section-new">
+                            <div class="signature-block">
+                                <p class="signature-title" style="color: #000000;">التوقيع</p>
+                                <div class="signature-line"></div>
+                                <p class="signature-name-placeholder" style="color: #000000;"></p>
                             </div>
-                            <div class="signature-box">
-                                <p>شئون هيئة التدريس</p>
+                            <div class="signature-block">
+                                <p class="signature-title" style="color: #000000;">شئون هيئة التدريس</p>
+                                <div class="signature-line"></div>
+                                <p class="signature-name-placeholder" style="color: #000000;"></p>
                             </div>
-                            <div class="signature-box">
-                                <p>أمين المعهد</p>
-                            </div>
-                            <div class="signature-box">
-                                <p class="dean-title-text">عميد المعهد</p>
-                                <p class="dean-name">( ا.د. مصطفي كامل )</p>
+                            <div class="signature-block">
+                                <p class="signature-title" style="color: #000000;">أمين المعهد</p>
+                                <div class="signature-line"></div>
+                                <p class="signature-name-placeholder" style="color: #000000;"></p>
                             </div>
                         </div>
-                    </div> <!-- End of report-content-to-print -->
+                        <!-- Dean's Signature Block (Moved and styled for larger, left-aligned) -->
+                        <div class="signature-block dean-signature">
+                            <p class="signature-title" style="color: #000000;">عميد المعهد</p>
+                            <div class="signature-line"></div>
+                            <p class="signature-name-actual" style="color: #000000;">( أ.د. / مصطفى كامل )</p>
+                        </div>
+                    </div>
                 `;
             }
 
-            // Function to print only the currently displayed report
             async function printCurrentReport() {
-                const reportContent = reportDisplayArea.querySelector('.report-content-to-print');
+                const reportContent = document.querySelector('#reportDisplayArea .report-content-to-print');
                 if (!reportContent) {
-                    messageBox.textContent = 'لا يوجد تقرير لعرضه. الرجاء اختيار عضو هيئة التدريس أولاً.';
+                    messageBox.textContent = 'لا يوجد تقرير لعرضه.';
                     return;
                 }
 
                 loadingOverlay.style.display = 'flex';
-                messageBox.textContent = 'جارٍ إعداد التقرير الحالي للطباعة... يرجى الانتظار.';
-
-                const printIframe = document.createElement('iframe');
-                printIframe.style.position = 'absolute';
-                printIframe.style.left = '-9999px';
-                printIframe.style.width = '210mm'; // A4 width
-                printIframe.style.height = '297mm'; // A4 height
-                document.body.appendChild(printIframe);
-
-                await new Promise(resolve => {
-                    printIframe.onload = resolve;
-                    printIframe.contentDocument.open();
-                    printIframe.contentDocument.write(`
-                        <!DOCTYPE html>
-                        <html lang="ar" dir="rtl">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>تقرير ساعات التدريس الفردي</title>
-                            <style>
-                                body {
-                                    font-family: 'Inter', sans-serif;
-                                    background-color: #ffffff;
-                                    margin: 0;
-                                    padding: 5mm; /* Reduced overall page padding */
-                                    font-size: 0.8em; /* Slightly smaller base font for more content */
-                                }
-                                .report-content-to-print {
-                                    background-color: #ffffff;
-                                    padding: 0;
-                                    border-radius: 0;
-                                    box-shadow: none;
-                                    max-width: 200mm; /* Adjusted max-width for smaller margins */
-                                    width: 100%;
-                                    margin: 0 auto;
-                                }
-                                /* Optimized styles for print version - even more aggressive */
-                                .report-content-to-print h1, .report-content-to-print h2, .report-content-to-print h3, .report-content-to-print h4 {
-                                    margin-bottom: 0.3rem; /* Very little margin */
-                                    line-height: 1.2;
-                                }
-                                .report-content-to-print .mb-4 { margin-bottom: 0.3rem; }
-                                .report-content-to-print .mb-2 { margin-bottom: 0.2rem; }
-                                .report-content-to-print .mb-1 { margin-bottom: 0.1rem; }
-                                .report-content-to-print table { margin-top: 0.3rem; } /* Very little margin above tables */
-                                .report-content-to-print th, .report-content-to-print td { padding: 0.2rem 0.3rem; font-size: 0.9em; } /* Even less padding, slightly smaller font */
-                                .report-content-to-print .mt-6 { margin-top: 0.5rem; }
-                                .report-content-to-print .signature-section { margin-top: 0.8rem; padding-top: 0.3rem; } /* Reduced space for signatures */
-                                .report-content-to-print .signature-box { padding-top: 0.8rem; font-size: 0.9em; } /* Reduced padding for signature line, smaller font */
-
-                                table {
-                                    width: 100%;
-                                    border-collapse: collapse;
-                                }
-                                th, td {
-                                    border: 1px solid #e5e7eb;
-                                    text-align: center;
-                                }
-                                th {
-                                    background-color: #f2f2f2;
-                                    font-weight: 600;
-                                    color: #374151;
-                                }
-                                .text-center-aligned { text-align: center; }
-                                .text-right-aligned { text-align: right; }
-                                .signature-section {
-                                    display: flex;
-                                    justify-content: space-around;
-                                    text-align: center;
-                                    flex-wrap: wrap;
-                                }
-                                .signature-box {
-                                    flex: 1;
-                                    min-width: 200px;
-                                    margin: 0.2rem; /* Reduced margin between boxes */
-                                    border-top: 1px solid #d1d5db;
-                                    text-align: center;
-                                }
-                                .grid { display: grid; }
-                                .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-                                .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-                                .gap-4 { gap: 0.5rem; } /* Reduced gap for data section */
-                                .flex { display: flex; }
-                                .justify-between { justify-content: space-between; }
-                                .border-b { border-bottom-width: 1px; }
-                                .pb-2 { padding-bottom: 0.2rem; } /* Reduced padding */
-                                .font-medium { font-weight: 500; }
-                                .flex-grow { flex-grow: 1; }
-                                .text-left { text-align: left; }
-                                .text-right { text-align: right; }
-                                .text-xl { font-size: 1.25rem; }
-                                .font-bold { font-weight: 700; }
-                                .text-gray-800 { color: #1f2937; }
-                                .text-gray-700 { color: #374151; }
-                                .text-gray-600 { color: #4b5563; }
-                                .text-gray-500 { color: #6b7280; }
-
-                                .dean-title-text {
-                                    font-weight: bold;
-                                    font-size: 1.2em; /* Adjusted for smaller base font */
-                                    font-family: 'Arial Black', Gadget, sans-serif;
-                                    text-align: center;
-                                    margin-bottom: 0;
-                                    line-height: 1.1;
-                                }
-                                .dean-name {
-                                    font-weight: bold;
-                                    font-size: 1.3rem; /* Adjusted for smaller base font */
-                                    font-family: 'Arial Black', Gadget, sans-serif;
-                                    text-align: center;
-                                    margin-top: -0.3em;
-                                    line-height: 1.1;
-                                }
-                                .print-header-with-logos {
-                                    display: flex;
-                                    justify-content: space-between;
-                                    align-items: center;
-                                    text-align: center;
-                                    position: relative;
-                                    padding: 0 170px;
-                                }
-                                .print-header-with-logos img {
-                                    position: absolute;
-                                    width: 160px;
-                                    height: 160px;
-                                    object-fit: contain;
-                                    top: 50%;
-                                    transform: translateY(-50%);
-                                }
-                                .print-header-with-logos .logo-left { left: 0; }
-                                .print-header-with-logos .logo-right { right: 0; }
-                            </style>
-                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-                            <link href="https://fonts.googleapis.com/css2?family=Arial+Black&display=swap" rel="stylesheet">
-                        </head>
-                        <body></body>
-                        </html>
-                    `);
-                    printIframe.contentDocument.close();
-                });
-                
-                // Clone the report content to ensure all styling is carried over
-                const clonedContent = reportContent.cloneNode(true);
-                printIframe.contentDocument.body.appendChild(clonedContent);
-
-                const options = {
-                    margin: [5, 5, 5, 5], /* Reduced page margins */
-                    filename: 'تقرير_ساعات_التدريس_الحالي.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { 
-                        scale: 2.5, /* Increased scale for more aggressive shrinking */
-                        logging: false,
-                        dpi: 192, 
-                        letterRendering: true,
-                        useCORS: true,
-                        windowWidth: printIframe.offsetWidth,
-                        windowHeight: printIframe.offsetHeight
-                    },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-
                 try {
-                    await html2pdf().from(printIframe.contentWindow.document.body).set(options).save();
-                    messageBox.textContent = 'تم إنشاء ملف PDF للتقرير الحالي بنجاح.';
+                    // Create a temporary div to hold the content for PDF generation
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = reportContent.outerHTML; // Clone the report content
+
+                    // Set specific options for html2pdf
+                    const pdfOptions = {
+                        margin: 5, /* Reduced margin for more content space */
+                        filename: `تقرير_ساعات_التدريس_${staffSelect.value}.pdf`,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { 
+                            scale: 2, 
+                            dpi: 192, 
+                            letterRendering: true,
+                        },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        pagebreak: {
+                            mode: 'avoid-all' // This tells html2pdf to try and fit content on one page
+                        }
+                    };
+
+                    await html2pdf().from(tempDiv).set(pdfOptions).save();
+                    messageBox.textContent = 'تم إنشاء ملف PDF بنجاح للتقرير الحالي.';
                 } catch (error) {
                     console.error('Error generating PDF for current report:', error);
-                    messageBox.textContent = `حدث خطأ أثناء إنشاء ملف PDF للتقرير الحالي: ${error.message}`;
+                    messageBox.textContent = `حدث خطأ أثناء إنشاء PDF للتقرير الحالي: ${error.message}`;
                 } finally {
                     loadingOverlay.style.display = 'none';
-                    if (printIframe.parentNode) {
-                        printIframe.parentNode.removeChild(printIframe);
-                    }
                 }
             }
 
-
-            // Function to generate all reports and initiate PDF print
             async function generateAllReportsAndPrint() {
                 if (allRecords.length === 0) {
-                    messageBox.textContent = 'لا توجد بيانات لإنشاء التقارير. الرجاء معالجة ملف XLSX أولاً.';
+                    messageBox.textContent = 'الرجاء تحميل ملف XLSX أولاً.';
                     return;
                 }
 
                 loadingOverlay.style.display = 'flex';
-                messageBox.textContent = 'جارٍ إعداد التقارير للطباعة... يرجى الانتظار.';
-                reportDisplayArea.innerHTML = ''; // Clear display area while preparing PDF
-
-
-                // Create a temporary, hidden iframe to render all reports for PDF generation
-                const printIframe = document.createElement('iframe');
-                printIframe.style.position = 'absolute';
-                printIframe.style.left = '-9999px';
-                printIframe.style.width = '210mm'; // A4 width
-                printIframe.style.height = '297mm'; // A4 height, adjusted if needed for content
-                document.body.appendChild(printIframe);
-
-                // Wait for the iframe to load
-                await new Promise(resolve => {
-                    printIframe.onload = resolve;
-                    // Write the basic HTML structure to the iframe document
-                    printIframe.contentDocument.open();
-                    printIframe.contentDocument.write(`
-                        <!DOCTYPE html>
-                        <html lang="ar" dir="rtl">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>جميع تقارير ساعات التدريس</title>
-                            <!-- Include CSS from the main page -->
-                            <style>
-                                body {
-                                    font-family: 'Inter', sans-serif;
-                                    background-color: #ffffff;
-                                    margin: 0;
-                                    padding: 10mm; /* A bit of margin for PDF */
-                                }
-                                .report-container {
-                                    background-color: #ffffff;
-                                    padding: 1.5rem; /* Reduced padding */
-                                    border-radius: 0.75rem;
-                                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-                                    max-width: 190mm; /* Adjusted for A4 width with margins */
-                                    width: 100%;
-                                    margin-bottom: 0.5rem; /* Reduced space for print */
-                                    page-break-after: always; /* Ensure each report starts on a new page */
-                                }
-                                .report-container:last-child {
-                                    page-break-after: avoid; /* No page break after the last report */
-                                }
-                                /* Optimized styles for print version for all reports */
-                                .report-content-to-print .mb-4 { margin-bottom: 0.5rem; } /* Less space */
-                                .report-content-to-print .mb-2 { margin-bottom: 0.25rem; }
-                                .report-content-to-print .mb-1 { margin-bottom: 0.1rem; }
-                                .report-content-to-print table { margin-top: 0; } /* No margin above tables */
-                                .report-content-to-print th, .report-content-to-print td { padding: 0.3rem 0.5rem; } /* Even less padding */
-                                .report-content-to-print .mt-6 { margin-top: 0.5rem; } /* Less space above totals */
-                                .report-content-to-print .signature-section { margin-top: 1rem; padding-top: 0.5rem; } /* Reduced space for signatures */
-                                .report-content-to-print .signature-box { padding-top: 1rem; } /* Reduced padding for signature line */
-
-                                table {
-                                    width: 100%;
-                                    border-collapse: collapse;
-                                }
-                                th, td {
-                                    border: 1px solid #e5e7eb;
-                                    text-align: center;
-                                }
-                                th {
-                                    background-color: #f2f2f2;
-                                    font-weight: 600;
-                                    color: #374151;
-                                }
-                                .text-center-aligned {
-                                    text-align: center;
-                                }
-                                .text-right-aligned {
-                                    text-align: right;
-                                }
-                                .signature-section {
-                                    display: flex;
-                                    justify-content: space-around;
-                                    text-align: center;
-                                    flex-wrap: wrap;
-                                }
-                                .signature-box {
-                                    flex: 1;
-                                    min-width: 200px;
-                                    margin: 0.5rem;
-                                    border-top: 1px solid #d1d5db;
-                                    text-align: center; /* Centered for print iframe */
-                                }
-                                /* Additional styles from Tailwind might be needed directly if not covered by basic styles */
-                                .grid { display: grid; }
-                                .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-                                .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-                                .gap-4 { gap: 1rem; }
-                                .flex { display: flex; }
-                                .justify-between { justify-content: space-between; }
-                                .border-b { border-bottom-width: 1px; }
-                                .pb-2 { padding-bottom: 0.5rem; }
-                                .font-medium { font-weight: 500; }
-                                .flex-grow { flex-grow: 1; }
-                                .text-left { text-align: left; }
-                                .text-right { text-align: right; }
-                                .text-xl { font-size: 1.25rem; }
-                                .font-bold { font-weight: 700; }
-                                .text-gray-800 { color: #1f2937; }
-                                .text-gray-700 { color: #374151; }
-                                .text-gray-600 { color: #4b5563; }
-                                .text-gray-500 { color: #6b7280; }
-                                /* Styles specific to the header with logos for print */
-                                .print-header-with-logos {
-                                    display: flex;
-                                    justify-content: space-between;
-                                    align-items: center;
-                                    text-align: center;
-                                    position: relative;
-                                    padding: 0 170px;
-                                }
-                                .print-header-with-logos img {
-                                    position: absolute;
-                                    width: 160px;
-                                    height: 160px;
-                                    object-fit: contain;
-                                    top: 50%;
-                                    transform: translateY(-50%);
-                                }
-                                .print-header-with-logos .logo-left { left: 0; }
-                                .print-header-with-logos .logo-right { right: 0; }
-
-                                .dean-title-text {
-                                    font-weight: bold;
-                                    font-size: 1.3em;
-                                    font-family: 'Arial Black', Gadget, sans-serif;
-                                    text-align: center;
-                                    margin-bottom: 0;
-                                    line-height: 1.1;
-                                }
-                                .dean-name {
-                                    font-weight: bold;
-                                    font-size: 1.5rem;
-                                    font-family: 'Arial Black', Gadget, sans-serif;
-                                    text-align: center;
-                                    margin-top: -0.3em;
-                                    line-height: 1.1;
-                                }
-                            </style>
-                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-                            <link href="https://fonts.googleapis.com/css2?family=Arial+Black&display=swap" rel="stylesheet">
-                        </head>
-                        <body></body>
-                        </html>
-                    `);
-                    printIframe.contentDocument.close();
-                });
-
-                let allReportsCombinedHtml = '';
-                allRecords.forEach(record => {
-                    // Wrap each report in its own container to ensure page breaks
-                    allReportsCombinedHtml += `<div class="report-container">${getReportHtml(record, headers)}</div>`;
-                });
-                printIframe.contentDocument.body.innerHTML = allReportsCombinedHtml;
-
-
-                const options = {
-                    margin: [10, 10, 10, 10],
-                    filename: 'جميع_تقارير_ساعات_التدريس.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { 
-                        scale: 2, 
-                        logging: false, // Set to true for debugging html2canvas issues
-                        dpi: 192, 
-                        letterRendering: true,
-                        useCORS: true,
-                        windowWidth: printIframe.offsetWidth, // Ensure html2canvas uses iframe's dimensions
-                        windowHeight: printIframe.offsetHeight
-                    },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
+                messageBox.textContent = 'جاري إنشاء جميع تقارير PDF... قد يستغرق هذا بعض الوقت.';
 
                 try {
-                    await html2pdf().from(printIframe.contentWindow.document.body).set(options).save();
-                    messageBox.textContent = 'تم إنشاء ملف PDF بنجاح لجميع التقارير.';
+                    const uniqueNames = new Set(allRecords.map(record => {
+                        const nameHeaderIndex = headers.findIndex(h => String(h).trim() === 'الأسم');
+                        return record && record[nameHeaderIndex] ? String(record[nameHeaderIndex]).trim() : '';
+                    }).filter(name => name !== ''));
+
+                    const allReportsHtmlContent = [];
+                    for (const name of uniqueNames) {
+                        const nameHeaderIndex = headers.findIndex(h => String(h).trim() === 'الأسم');
+                        const record = allRecords.find(r => r && r[nameHeaderIndex] && String(r[nameHeaderIndex]).trim() === name);
+                        if (record) {
+                            allReportsHtmlContent.push(getReportHtml(record, headers));
+                        }
+                    }
+
+                    const combinedHtml = `
+                        <div class="combined-reports-container">
+                            ${allReportsHtmlContent.join('<div class="page-break-after-custom"></div>')}
+                        </div>
+                    `;
+
+                    // Create a temporary div to render the combined HTML for html2pdf
+                    const tempDivForCombined = document.createElement('div');
+                    tempDivForCombined.innerHTML = combinedHtml;
+                    document.body.appendChild(tempDivForCombined); // Append to body for rendering styles correctly
+
+                    await html2pdf().from(tempDivForCombined).set({
+                        margin: 10,
+                        filename: `جميع_تقارير_ساعات_التدريس.pdf`,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, dpi: 192, letterRendering: true },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        pagebreak: { mode: ['avoid-all', 'css'] } // Use 'css' to respect page-break-after
+                    }).save();
+
+                    document.body.removeChild(tempDivForCombined); // Clean up
+                    messageBox.textContent = 'تم إنشاء ملف PDF مجمع لجميع التقارير بنجاح.';
+
                 } catch (error) {
-                    console.error('Error generating PDF:', error);
-                    messageBox.textContent = `حدث خطأ أثناء إنشاء ملف PDF: ${error.message}`;
+                    console.error('Error generating all PDFs:', error);
+                    messageBox.textContent = `حدث خطأ أثناء إنشاء جميع ملفات PDF: ${error.message}`;
                 } finally {
                     loadingOverlay.style.display = 'none';
-                    // Clean up the temporary iframe
-                    if (printIframe.parentNode) {
-                        printIframe.parentNode.removeChild(printIframe);
-                    }
-                    displaySelectedStaffReport(); 
                 }
             }
-        }); // End of DOMContentLoaded
+        });
     </script>
 </body>
 </html>
-
